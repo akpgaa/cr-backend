@@ -122,28 +122,34 @@ const GetData = async (req, res, next) => {
     // let city = await CmsContent.getFreedom('*', 'city', 1, 1, 1)
     // let zone = await CmsContent.getFreedom('*', 'ps_zone', 1, 1, 1)
     // let range = await CmsContent.getFreedom('*', 'ps_range', 1, 1, 1)
-    // let Info = await CmsContent.getFreedom('cr_identifier ,Personal_Details_Name_First ,Personal_Details_Native_Police_Station ', 'cr_information', 1, 1, 1)
+    let Info = await CmsContent.getFreedom('cr_identifier ,Personal_Details_Name_First ,Personal_Details_Native_Police_Station ', 'cr_information', 1, 1, 1)
+    // let station = await CmsContent.getFreedom(
+    //   'cr_information.cr_identifier,cr_information.Personal_Details_Name_First ,cr_information.Personal_Details_Native_Police_Station,ps_station.station_id,ps_station.station_name,ps_range.range_id,ps_range.range_name,ps_district.district_id,ps_district.district_name,ps_zone.zone_id,ps_zone.zone_name,city.city_name,city.city_id',
+    //   'ps_station,ps_district,ps_range,ps_zone,city,cr_information',
+    //   'substr(cr_information.personal_Details_Native_Police_station,1,2)=ps_station.station_id and ps_zone.city_id=city.city_id and ps_district.zone_id=ps_zone.zone_id and  ps_range.district_id=ps_district.district_id and ps_station.range_id=ps_range.range_id',
+    //   1,
+    //   1)
     let station = await CmsContent.getFreedom(
-      'cr_information.cr_identifier,cr_information.Personal_Details_Name_First ,cr_information.Personal_Details_Native_Police_Station,ps_station.station_id,ps_station.station_name,ps_range.range_id,ps_range.range_name,ps_district.district_id,ps_district.district_name,ps_zone.zone_id,ps_zone.zone_name,city.city_name,city.city_id',
-      'ps_station,ps_district,ps_range,ps_zone,city,cr_information',
-      'substr(cr_information.personal_Details_Native_Police_station,1,2)=ps_station.station_id and ps_zone.city_id=city.city_id and ps_district.zone_id=ps_zone.zone_id and  ps_range.district_id=ps_district.district_id and ps_station.range_id=ps_range.range_id',
+      'ps_station.station_id,ps_station.station_name,ps_range.range_id,ps_range.range_name,ps_district.district_id,ps_district.district_name,ps_zone.zone_id,ps_zone.zone_name,city.city_name,city.city_id',
+      'ps_station,ps_district,ps_range,ps_zone,city',
+      'ps_zone.city_id=city.city_id and ps_district.zone_id=ps_zone.zone_id and  ps_range.district_id=ps_district.district_id and ps_station.range_id=ps_range.range_id',
       1,
       1)
     // groupBy
-    // let returndata = []
-    // let wait = await station.map((ival) => {
-    //   Info.map((jval) => {
-    //     if (jval.Personal_Details_Native_Police_Station) {
-    //       let result = jval.Personal_Details_Native_Police_Station.split(' ')
-    //       if (ival.station_id == result[0]) {
-    //         ival.cr_identifier = jval.cr_identifier
-    //         ival.Personal_Details_Name_First = jval.Personal_Details_Name_First
-    //         returndata.push(ival)
-    //       }
-    //     }
-    //   })
-    // })
-    // await Promise.all(wait)
+    let returndata = []
+    let wait = await station.map((ival) => {
+      Info.map((jval) => {
+        if (jval.Personal_Details_Native_Police_Station) {
+          let result = jval.Personal_Details_Native_Police_Station.split(' ')
+          if (ival.station_id == result[0]) {
+            ival.cr_identifier = jval.cr_identifier
+            ival.Personal_Details_Name_First = jval.Personal_Details_Name_First
+            // returndata.push(ival)
+          }
+        }
+      })
+    })
+    await Promise.all(wait)
     // for ciry
     let result = await CmsContent.groupBy(station, 'city_id', 'city_name')
     //for zone
