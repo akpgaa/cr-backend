@@ -132,9 +132,10 @@ const GetData = async (req, res, next) => {
     let station = await CmsContent.getFreedom(
       'ps_station.station_id,ps_station.station_name,ps_range.range_id,ps_range.range_name,ps_district.district_id,ps_district.district_name,ps_zone.zone_id,ps_zone.zone_name,city.city_name,city.city_id',
       'ps_station,ps_district,ps_range,ps_zone,city',
-      'ps_zone.city_id=city.city_id and ps_district.zone_id=ps_zone.zone_id and  ps_range.district_id=ps_district.district_id and ps_station.range_id=ps_range.range_id',
+      'city.city_id=ps_zone.city_id and ps_zone.zone_id = ps_district.zone_id and ps_district.district_id=ps_range.district_id and ps_range.range_id=ps_station.range_id',
       1,
-      1)
+      'trim(city.city_name),trim(ps_zone.zone_name),trim(ps_district.district_name),trim(ps_range.range_name),trim(ps_station.station_name)'
+    )
     // groupBy
     let returndata = []
     let wait = await station.map((ival) => {
@@ -151,11 +152,11 @@ const GetData = async (req, res, next) => {
     })
     await Promise.all(wait)
     // for ciry
-    let result = await CmsContent.groupBy(station, 'city_id', 'city_name')
+    let result = await groupBy(station, 'city_id', 'city_name')
     //for zone
     let result1 = {}
     let wait1 = await Object.keys(result).map(async key => {
-      result1[key] = await CmsContent.groupBy(result[key], 'zone_id', 'zone_name')
+      result1[key] = await groupBy(result[key], 'zone_id', 'zone_name')
       // console.log(result1[key]);
     })
     await Promise.all(wait1)
@@ -164,7 +165,7 @@ const GetData = async (req, res, next) => {
     let wait2 = await Object.keys(result1).map(async key => {
       result2[key] = {}
       let wait3 = await Object.keys(result1[key]).map(async key1 => {
-        result2[key][key1] = await CmsContent.groupBy(result1[key][key1], 'range_id', 'range_name')
+        result2[key][key1] = await groupBy(result1[key][key1], 'range_id', 'range_name')
         // console.log(result1[key]);
       })
       await Promise.all(wait3)
@@ -179,7 +180,7 @@ const GetData = async (req, res, next) => {
         result3[key][key1] = {}
         let wait5 = await Object.keys(result2[key][key1]).map(async key2 => {
           // console.log(result2[key][key1][key2]);
-          result3[key][key1][key2] = await CmsContent.groupBy(result2[key][key1][key2], 'district_id', 'district_name')
+          result3[key][key1][key2] = await groupBy(result2[key][key1][key2], 'district_id', 'district_name')
           // console.log(result1[key]);
         })
         await Promise.all(wait5)
@@ -190,6 +191,7 @@ const GetData = async (req, res, next) => {
 
     // for staion
     let result4 = {}
+    let dataforcollapse = {}
     let wait7 = await Object.keys(result3).map(async key => {
       result4[key] = {}
       let wait3 = await Object.keys(result3[key]).map(async key1 => {
@@ -197,8 +199,8 @@ const GetData = async (req, res, next) => {
         let wait5 = await Object.keys(result3[key][key1]).map(async key2 => {
           result4[key][key1][key2] = {}
           let wait6 = await Object.keys(result3[key][key1][key2]).map(async key3 => {
-            // console.log(result3[key][key1][key2]);
-            result4[key][key1][key2][key3] = await CmsContent.groupBy(result3[key][key1][key2][key3], 'station_id', 'station_name')
+
+            result4[key][key1][key2][key3] = await groupBy(result3[key][key1][key2][key3], 'station_id', 'station_name')
             // console.log(result1[key]);
           })
           await Promise.all(wait6)
@@ -208,9 +210,42 @@ const GetData = async (req, res, next) => {
       await Promise.all(wait3)
     })
     await Promise.all(wait7)
+    let wait8 = await Object.keys(result4).map(async key => {
 
+      dataforcollapse[key] = {}
+      dataforcollapse[key].collapse = false
+      let wait3 = await Object.keys(result4[key]).map(async key1 => {
 
-    res.send(result4)
+        dataforcollapse[key][key1] = {}
+        dataforcollapse[key][key1].collapse = false
+        let wait5 = await Object.keys(result4[key][key1]).map(async key2 => {
+
+          dataforcollapse[key][key1][key2] = {}
+          dataforcollapse[key][key1][key2].collapse = false
+          let wait6 = await Object.keys(result4[key][key1][key2]).map(async key3 => {
+            // console.log(result3[key][key1][key2]);
+            dataforcollapse[key][key1][key2][key3] = {}
+            dataforcollapse[key][key1][key2][key3].collapse = false
+            let wait1 = await Object.keys(result4[key][key1][key2][key3]).map(async key4 => {
+              // console.log(result3[key][key1][key2]);
+              dataforcollapse[key][key1][key2][key3][key4] = {}
+              dataforcollapse[key][key1][key2][key3][key4].collapse = false
+
+            })
+            await Promise.all(wait1)
+          })
+          await Promise.all(wait6)
+        })
+        await Promise.all(wait5)
+      })
+      await Promise.all(wait3)
+    })
+    await Promise.all(wait8)
+    let response = {}
+    response.data = result4;
+    response.collapse = dataforcollapse
+
+    res.send(response)
   } catch (error) {
     //db end connection
     endConnection();
@@ -219,7 +254,16 @@ const GetData = async (req, res, next) => {
     next(error);
   }
 };
-
+const groupBy = (items, key, key1 = 'name') => items.reduce(
+  (result, item) => ({
+    ...result,
+    [item[key1]]: [
+      ...(result[item[key1]] || []),
+      item,
+    ],
+  }),
+  {},
+);
 const getsingledata = async (req, res, next) => {
   try {
     let id = req.body.id
@@ -239,12 +283,28 @@ const getsingledata = async (req, res, next) => {
   }
 };
 
+const Search = async (req, res, next) => {
+  try {
+    let { keyword } = req.body;
+    console.log(keyword);
+    let Info = await CmsContent.getFreedom('Personal_Details_Name_First,Personal_Details_Native_Police_Station,cr_identifier', 'cr_information', `Personal_Details_Name_First LIKE '${keyword}'`, 1, 1)
+
+    res.send(Info)
+  } catch (error) {
+    //db end connection
+    endConnection();
+    console.error(chalk.red(error));
+    res.status(500);
+    next(error);
+  }
+}
 module.exports = {
 
   // sandboxtest,
   getFreedom,
   addMaster,
   GetData,
-  getsingledata
+  getsingledata,
+  Search
   // sendmail
 };

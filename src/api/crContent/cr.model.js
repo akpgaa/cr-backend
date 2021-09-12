@@ -82,16 +82,16 @@ class CmsContent {
       );
     });
   }
-  static groupBy = (items, key, key1 = 'name') => items.reduce(
-    (result, item) => ({
-      ...result,
-      [item[key1]]: [
-        ...(result[item[key1]] || []),
-        item,
-      ],
-    }),
-    {},
-  );
+  // static groupBy = (items, key, key1 = 'name') => items.reduce(
+  //   (result, item) => ({
+  //     ...result,
+  //     [item[key1]]: [
+  //       ...(result[item[key1]] || []),
+  //       item,
+  //     ],
+  //   }),
+  //   {},
+  // );
 }
 
 module.exports = CmsContent;
