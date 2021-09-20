@@ -244,7 +244,7 @@ const GetData = async (req, res, next) => {
     let response = {}
     response.data = result4;
     response.collapse = dataforcollapse
-
+    endConnection();
     res.send(response)
   } catch (error) {
     //db end connection
@@ -272,7 +272,7 @@ const getsingledata = async (req, res, next) => {
     // let zone = await CmsContent.getFreedom('*', 'ps_zone', 1, 1, 1)
     // let range = await CmsContent.getFreedom('*', 'ps_range', 1, 1, 1)
     let Info = await CmsContent.getFreedom('*', 'cr_information', `cr_identifier=${id}`, 1, 1)
-
+    endConnection();
     res.send(Info)
   } catch (error) {
     //db end connection
@@ -285,10 +285,14 @@ const getsingledata = async (req, res, next) => {
 
 const Search = async (req, res, next) => {
   try {
-    let { keyword } = req.body;
-    console.log(keyword);
-    let Info = await CmsContent.getFreedom('Personal_Details_Name_First,Personal_Details_Native_Police_Station,cr_identifier', 'cr_information', `Personal_Details_Name_First LIKE '${keyword}'`, 1, 1)
-
+    let { keyword, query } = req.body;
+    // console.log(query);
+    let Info = await CmsContent.getFreedom(
+      'Personal_Details_Name_First,Personal_Details_Native_Police_Station,cr_identifier', 'cr_information',
+      query,
+      1,
+      1)
+    endConnection();
     res.send(Info)
   } catch (error) {
     //db end connection
@@ -298,6 +302,31 @@ const Search = async (req, res, next) => {
     next(error);
   }
 }
+
+const Read = async (req, res, next) => {
+  try {
+    let { query } = req.body;
+    // console.log(query);
+    let Info = await CmsContent.Read(query)
+    if (Info) {
+      let wait = await Info.map((ival, i) => {
+        ival.value = i + 1
+      })
+      await Promise.all(wait)
+    }
+    endConnection();
+    res.send(Info)
+  } catch (error) {
+    //db end connection
+    endConnection();
+    console.error(chalk.red(error));
+    res.status(500);
+    next(error);
+  }
+}
+
+
+
 module.exports = {
 
   // sandboxtest,
@@ -305,6 +334,6 @@ module.exports = {
   addMaster,
   GetData,
   getsingledata,
-  Search
-  // sendmail
+  Search,
+  Read
 };

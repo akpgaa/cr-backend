@@ -65,5 +65,9 @@ router
 router
     .route("/search")
     .post(corsOptionsDelegate, cmsContent.Search)
+    
+router
+.route("/Read")
+.post(corsOptionsDelegate, cmsContent.Read)
 
 module.exports = router;

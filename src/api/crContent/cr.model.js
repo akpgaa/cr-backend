@@ -82,6 +82,18 @@ class CmsContent {
       );
     });
   }
+  static Read(query) {
+
+    return new Promise((resolve, reject) => {
+      connection.query(
+        query,
+        (err, rows) => {
+          if (err) return reject(err);
+          resolve(rows);
+        }
+      );
+    });
+  }
   // static groupBy = (items, key, key1 = 'name') => items.reduce(
   //   (result, item) => ({
   //     ...result,
